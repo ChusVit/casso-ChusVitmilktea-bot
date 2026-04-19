@@ -5,6 +5,8 @@ import os
 import uvicorn
 
 # DEBUG: In env keys liên quan để verify Railway inject đúng
+import openai as _openai_check
+print(f"=== OPENAI SDK VERSION: {_openai_check.__version__} ===", flush=True)
 print("=== RAILWAY CONTEXT ===", flush=True)
 for key in ["RAILWAY_ENVIRONMENT_NAME", "RAILWAY_SERVICE_NAME", "RAILWAY_PROJECT_NAME",
             "RAILWAY_BETA_ENABLE_RUNTIME_V2", "RAILWAY_DEPLOYMENT_ID"]:
