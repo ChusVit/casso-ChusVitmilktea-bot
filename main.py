@@ -103,7 +103,6 @@ def get_pretty_menu(df):
         emoji = "🧋" if "Trà Sữa" in cat else "🍓" if "Trái Cây" in cat else "☕" if "Cà Phê" in cat else "❄️"
         menu_str += f"{emoji} *{cat.upper()}*\n```\n"
         
-        # ĐÃ SỬA DÒNG NÀY: Dùng ^6 để căn giữa chữ M và L trong khoảng 6 ký tự
         menu_str += f"{'':<{max_len+1}} {'M':^6}   {'L':^6}\n"
         
         items = df[df['category'] == cat]
