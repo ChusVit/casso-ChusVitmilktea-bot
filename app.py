@@ -4,6 +4,17 @@ import logging
 import os
 import uvicorn
 
+# DEBUG: In env keys liên quan để verify Railway inject đúng
+print("=== ENV CHECK ===", flush=True)
+for key in ["PAYOS_CLIENT_ID", "PAYOS_API_KEY", "PAYOS_CHECKSUM_KEY",
+            "TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "PAYOS_BANK_BIN", "PAYOS_BANK_ACC"]:
+    val = os.environ.get(key)
+    status = f"SET (len={len(val)})" if val else f"MISSING ({val!r})"
+    print(f"  {key}: {status}", flush=True)
+print("=== ALL ENV KEYS (names only) ===", flush=True)
+print(sorted(os.environ.keys()), flush=True)
+print("=================", flush=True)
+
 from main import bot, dp
 from database.db_handler import init_db
 from webhook_link import app as webhook_app
