@@ -1,10 +1,10 @@
 aiogram==3.6.0
 python-dotenv==1.0.0
-pandas>=2.3.0
+pandas>=2.0.0
 openai>=1.12.0
-payos==1.1.0
 fastapi==0.109.0
 uvicorn==0.27.0
-qrcode[pil]==7.4.2
+qrcode==7.4.2
 pillow>=10.0.0
 httpx==0.25.2
+python-multipart
