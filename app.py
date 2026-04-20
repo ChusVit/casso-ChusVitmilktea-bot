@@ -1,4 +1,3 @@
-"""Entry point gộp cho Railway: chạy cả Telegram bot (polling) và PayOS webhook (FastAPI) trong 1 process."""
 import asyncio
 import logging
 import os

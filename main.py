@@ -17,6 +17,7 @@ from aiogram.filters import CommandStart
 from openai import AsyncOpenAI
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile
 
+# --- 0. KHỞI TẠO CẤU HÌNH ---
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
@@ -85,14 +86,15 @@ async def generate_payos_link(order_id_str, total_amount, items_list):
 
         response = payos_instance.payment_requests.create(payment_data_dict)
         checkout_url = response.checkout_url
-        qr_code_emv = response.qr_code  # Lấy mã QR chính thức từ PayOS
+        qr_code_emv = response.qr_code  
         
         return checkout_url, qr_code_emv
 
     except Exception as e:
         print(f"⚠️ Lỗi PayOS: {e}")
         return None, None
-# --- 3. HÀM MENU PRETTY ---
+    
+# --- 3. HÀM MENU ---
 def get_pretty_menu(df):
     menu_str = "📋 *DANH SÁCH THỰC ĐƠN TRÀ SỮA CHUSVIT* 📋\n\n"
     categories = df['category'].unique()
@@ -144,7 +146,12 @@ Bạn là 'Chủ quán trà sữa' tên là Vịt. Bạn là một người thâ
 - LỜI CHÀO: Không chào khách nữa (vì hệ thống đã tự động chào). CHỈ dùng: "Dạ vâng", "Dạ rõ ạ", "Dạ mình/em/cháu nghe".
 - CẤM KỴ 3: Tuyệt đối không sửa menu hoặc thêm bớt món khi khách chưa hỏi. Chỉ trả lời đúng món khách hỏi,Nếu khách hỏi món ko rõ ràng (vd: đá xay) thì phải hỏi lại là đá xay gì, nếu khách hỏi món không có trong menu thì nói "Dạ món đó hiện tại mình chưa có ạ."
 
-2. QUY TRÌNH ĐẶT MÓN (BẮT BUỘC TUÂN THỦ THEO ĐÚNG THỨ TỰ BƯỚC):
+2. NGUYÊN TẮC TRONG CUỘC TRÒ CHUYỆN:
+- KHÔNG được phép làm công việc khác ngoài việc hỗ trợ khách hàng đặt món và trả lời các câu hỏi liên quan đến menu, khuyến mãi, thành viên, món ăn. Không được trả lời những câu hỏi không phải chuyên môn như giải toán đố, code, hay những câu hỏi mang tính chất cá nhân, xã hội, chính trị,...
+- Nếu khách hỏi những câu hỏi ngoài chuyên môn, bạn phải trả lời một cách khéo léo để từ chối trả lời, ví dụ: "Dạ vâng, mình rất muốn giúp bạn nhưng hiện tại mình chỉ chuyên về hỗ trợ đặt món và tư vấn menu thôi ạ. Bạn có muốn mình hỗ trợ không ạ?".
+- KHÔNG BAO GIỜ được phép bỏ qua bất kỳ bước nào trong quy trình đặt món. Nếu khách chưa cung cấp đủ thông tin, bạn phải tiếp tục hỏi cho đến khi có đủ.
+
+3. QUY TRÌNH ĐẶT MÓN (BẮT BUỘC TUÂN THỦ THEO ĐÚNG THỨ TỰ BƯỚC):
 
 - BƯỚC 1: LẤY THÔNG TIN MÓN
   + HỎI RÕ MÓN NƯỚC KHÁCH MUỐN GỌI.
@@ -156,21 +163,25 @@ Bạn là 'Chủ quán trà sữa' tên là Vịt. Bạn là một người thâ
   * Lưu ý khi chốt tên món cho khách phải đưa về đúng tên chuẩn trong menu để tiện cho việc tính tiền và lưu đơn hàng, KHÔNG ĐƯỢC TÙY TIỆN VIẾT LẠI TÊN MÓN KHÁC VỚI TÊN TRONG MENU (VD: "Trà Sữa Socola Đá Xay" phải chốt đúng tên này, không được viết thành "Socola Đá Xay" hay "Trà Socola Đá Xay" dù khách gọi như vậy).  
 
 - BƯỚC 2: XIN THÔNG TIN KHÁCH (CHỈ LÀM SAU KHI ĐÃ RÕ MÓN VÀ SIZE)
-  + BẮT BUỘC phải hỏi đủ 3 thông tin: Tên, Số điện thoại, Cách nhận hàng (Tại quán hay giao hàng). TUYỆT ĐỐI KHÔNG ĐƯỢC QUÊN HỎI.
-
+  + BẮT BUỘC phải hỏi đủ 4 thông tin: Tên, Số điện thoại, Cách nhận hàng (Tại quán hay giao hàng) và phương thức thanh toán (chuyển khoản online hoặc tiền mặt). TUYỆT ĐỐI KHÔNG ĐƯỢC QUÊN HỎI.
+  
+  
 - BƯỚC 3: KIỂM TRA DATABASE
   + NGAY KHI khách cung cấp Số điện thoại -> Gọi hàm `kiem_tra_khach_hang`.
   + Khách mới (`is_exists` = False): Hỏi có đăng ký thành viên không (giảm 10% TỔNG TIỀN).
   + Khách cũ (`is_exists` = True): Báo giá gốc (KHÔNG GIẢM 10%), nói rõ được cộng điểm.
 
 - BƯỚC 4: CHỐT ĐƠN
-  + Gọi hàm `chot_don_hang`.
+  + Nếu thanh toán tiền mặt thì ta sẽ chốt đơn luôn, không cần tạo link thanh toán.
+    + Nếu khách đồng ý thanh toán online thì gọi hàm `chot_don_hang` để tạo đơn hàng và trả về link thanh toán cùng mã QR chính thức từ PayOS.
 
+* lưu ý nếu khách cung cấp đầy đủ thông tin thì phải đọc và ghi nhận đầy (ví dụ: tên, số điện thoại, cách nhận hàng, phương thức thanh toán)    
+    
 DƯỚI ĐÂY LÀ MENU (TUÂN THỦ THỰC ĐƠN THẬT, KHÔNG THÊM BỚT MÓN NÀO):
 {PRETTY_MENU}
 """
 
-# NÂNG CẤP BỘ NHỚ LÊN 40 ĐỂ CHỐNG CRASH
+# --- 5. BOT LOGIC ---
 user_sessions = {}
 MAX_HISTORY = 100 
 
@@ -221,6 +232,8 @@ TOOLS = [
         }
     }
 ]
+
+# -- Các hàm hỗ trợ khác --
 
 async def countdown_and_cancel_order(order_id, chat_id):
     await asyncio.sleep(3600)
@@ -293,7 +306,8 @@ async def chat_handler(message: types.Message):
             try:
                 args = json.loads(tool_call.function.arguments)
             except json.JSONDecodeError:
-                # Bỏ qua nếu AI gen JSON lỗi
+                # Bỏ qua nếu AI gen JSON lỗi VÀ phải xóa tin nhắn lỗi khỏi lịch sử để tránh crash ở lượt sau
+                user_sessions[user_telegram_id].pop()
                 bot_reply = "Dạ hệ thống đang hơi lag xíu, bạn nhắc lại món giúp mình nhé!"
                 await message.answer(bot_reply)
                 return
@@ -337,7 +351,6 @@ async def chat_handler(message: types.Message):
                     "content": json.dumps({"status": "success"})
                 })
                 
-                # Trong hàm chat_handler, đoạn xử lý chốt đơn:
                 if order_id:
                     checkout_url, qr_code_emv = await generate_payos_link(order_id, args.get("total_amount"), args.get("items"))
                     
@@ -350,7 +363,7 @@ async def chat_handler(message: types.Message):
                                 f"✅ **XÁC NHẬN ĐƠN HÀNG: {order_id}**\n\n"
                                 f"👤 Khách hàng: {args.get('customer_name')}\n"
                                 f"💰 Tổng tiền: **{args.get('total_amount'):,} VNĐ**\n\n"
-                                f"📱 Quét mã QR này để thanh toán qua PayOS nhé! ✨"
+                                f"📱 Quý khách quét mã QR này để thanh toán qua PayOS nhé! ✨"
                             )
                             
                             keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -364,15 +377,16 @@ async def chat_handler(message: types.Message):
                                 reply_markup=keyboard,
                                 parse_mode="Markdown"
                             )
-                            bot_reply_content = f"✅ Đơn hàng {order_id} đã lên. Mã QR là mã thanh toán chính thức từ PayOS, khi Bạn thanh toán sẽ cập nhật ngay ạ!"
+                            bot_reply_content = f"✅ Đơn hàng {order_id} đã lên. Mã QR là mã thanh toán chính thức từ PayOS, khi Quý khách thanh toán sẽ cập nhật ngay ạ!"
                         else:
-                            bot_reply_content = f"Dạ đơn hàng **{order_id}** đã lên thành công! Bạn click nút bên dưới để thanh toán nhé!"
+                            bot_reply_content = f"Dạ đơn hàng **{order_id}** đã lên thành công! Quý khách click nút bên dưới để thanh toán nhé!"
                             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                                 [InlineKeyboardButton(text="💳 Thanh toán", url=checkout_url)]
                             ])
-                            await message.answer(bot_reply_content, reply_markup=keyboard)
+                            # Đã thêm parse_mode="Markdown" để format chữ in đậm hoạt động
+                            await message.answer(bot_reply_content, reply_markup=keyboard, parse_mode="Markdown")
                     else:
-                        bot_reply_content = f"Dạ hệ thống PayOS đang bận xíu, bạn đợi và thử lại nhé!"
+                        bot_reply_content = "Dạ xin lỗi quý khách, hệ thống PayOS đang bận xíu, quý khách đợi và thử lại nhé!"
                         await message.answer(bot_reply_content)
                     
                     asyncio.create_task(countdown_and_cancel_order(order_id, user_telegram_id))

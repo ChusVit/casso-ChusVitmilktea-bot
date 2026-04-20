@@ -1,12 +1,10 @@
 import os
-import json
 import logging
-import sqlite3
 from fastapi import FastAPI, Request, HTTPException
 from payos import PayOS
 from dotenv import load_dotenv
 import httpx 
-from database.db_handler import DB_PATH, get_telegram_id_by_order_id
+from database.db_handler import update_db_and_get_user
 
 load_dotenv()
 
@@ -20,45 +18,6 @@ payos = PayOS(
 )
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-# --- HÀM TRỢ GIÚP DATABASE ---
-def update_db_and_get_user(description):
-    """Cập nhật trạng thái và lấy telegram_id để báo tin"""
-    try:
-        print(f"DEBUG - Description nhận được: '{description}'")
-        
-        # Trích xuất mã đơn hàng từ description (Ví dụ: "CSZZ67RVHR5 PAYOd038" -> "Od-038")
-        if "PAY" in description:
-            # Lấy phần sau "PAY" (VD: "Od038")
-            idx = description.find("PAY") + 3
-            remaining = description[idx:]
-            # Lọc chỉ lấy ký tự chữ và số
-            safe_id = ''.join(c for c in remaining if c.isalnum())
-            # Format: "Od038" -> "Od-038"
-            order_id = f"{safe_id[:2]}-{safe_id[2:]}"
-        else:
-            print(f"❌ Không tìm thấy 'PAY' trong description!")
-            return None, None
-        
-        print(f"DEBUG - safe_id: '{safe_id}'")
-        print(f"DEBUG - order_id trích xuất: '{order_id}'")
-        
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        # 1. Cập nhật trạng thái thành 'Đã thanh toán'
-        cursor.execute("UPDATE orders SET status = 'Đã thanh toán' WHERE order_id = ?", (order_id,))
-        conn.commit()
-        
-        # 2. Lấy telegram_id từ order_id
-        user_id = get_telegram_id_by_order_id(order_id)
-        print(f"DEBUG - user_id: {user_id}")
-        
-        conn.close()
-        return user_id, order_id
-    except Exception as e:
-        print(f"❌ Lỗi Database Webhook: {e}")
-        return None, None
 
 async def notify_telegram_user(user_id, order_id):
     """Gửi tin nhắn báo thành công trực tiếp cho khách"""
@@ -78,11 +37,11 @@ async def notify_telegram_user(user_id, order_id):
 async def payos_webhook(request: Request):
     body = await request.json()
     try:
-        # 1. Xác thực Webhook (dùng API mới thay vì deprecated)
+        # 1. Xác thực Webhook
         webhook_data = payos.webhooks.verify(body)
         description = webhook_data.description
         
-        # 2. Cập nhật DB và lấy thông tin khách
+        # 2. Cập nhật DB và lấy thông tin khách bằng hàm của db_handler 
         user_id, order_id = update_db_and_get_user(description)
         
         if order_id:
