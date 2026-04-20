@@ -10,6 +10,13 @@ load_dotenv()
 
 app = FastAPI()
 
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"message": "Server Webhook của quán Trà Sữa ChusVit đang hoạt động mượt mà!"}
+# ---------------------------------------------------
+
 # Cấu hình payOS
 payos = PayOS(
     client_id=os.getenv("PAYOS_CLIENT_ID"),
