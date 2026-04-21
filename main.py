@@ -253,7 +253,9 @@ async def command_start_handler(message: types.Message):
 # CỔNG PHẢN HỒI NHANH (BYPASS AI)
 @dp.message(lambda msg: msg.text and re.sub(r'[.!?,;]$', '', msg.text.strip().lower()) in [
     "menu", "thực đơn", "xem menu", "xin menu", "cho xin menu", "cho xem menu", 
-    "menu ạ", "thực đơn ạ"
+    "menu ạ", "thực đơn ạ", "quán có món gì", "quán có gì", "giá menu", "bảng giá", "gọi món", "mình muốn gọi món", 
+    "mình muốn xem menu", "mình muốn gọi món", "có gì ngon", "có gì để gọi", "có gì để uống", "có gì để ăn", "mình muốn ăn uống gì đó", 
+    "mình đói rồi", "mình khát quá", "gọi đồ uống", "gọi trà sữa", "gọi cà phê"
 ])
 async def instant_menu_handler(message: types.Message):
     bot_reply = f"Dạ vâng, xin gửi menu của quán để mình tham khảo ạ:\n\n{PRETTY_MENU}"
