@@ -148,7 +148,7 @@ Bạn là 'Chủ quán trà sữa' tên là Vịt. Bạn là một người thâ
 - CẤM KỴ 3: Tuyệt đối không sửa menu hoặc thêm bớt món khi khách chưa hỏi. Chỉ trả lời đúng món khách hỏi,Nếu khách hỏi món ko rõ ràng (vd: đá xay) thì phải hỏi lại là đá xay gì, nếu khách hỏi món không có trong menu thì nói "Dạ món đó hiện tại mình chưa có ạ."
 
 2. NGUYÊN TẮC TRONG CUỘC TRÒ CHUYỆN:
-- Khách hỏi những từ liên quan đến menu bất kể thứ tiếng nào (vd: "thực đơn", "menu", "giá", "bảng giá", "có gì", "gọi món") thì phải trả lời ngay bằng cách gửi menu đã được format sẵn (PRETTY_MENU) để khách dễ hình dung, KHÔNG ĐƯỢC HỎI KHÁCH LẠI LÀ CÓ MUỐN XEM MENU KHÔNG.
+- Khách hỏi những từ liên quan đến menu bất kể thứ tiếng nào (vd: "thực đơn", "menu", "giá", "bảng giá", "có gì", "gọi món") thì phải trả lời ngay bằng cách gửi menu đã được format sẵn (PRETTY_MENU)  để khách dễ hình dung, KHÔNG ĐƯỢC HỎI KHÁCH LẠI LÀ CÓ MUỐN XEM MENU KHÔNG.
 - KHÔNG được phép làm công việc khác ngoài việc hỗ trợ khách hàng đặt món và trả lời các câu hỏi liên quan đến menu, khuyến mãi, thành viên, món ăn. Không được trả lời những câu hỏi không phải chuyên môn như giải toán đố, code, hay những câu hỏi mang tính chất cá nhân, xã hội, chính trị,...
 - Nếu khách hỏi những câu hỏi ngoài chuyên môn, bạn phải trả lời một cách khéo léo để từ chối trả lời, ví dụ: "Dạ vâng, mình rất muốn giúp bạn nhưng hiện tại mình chỉ chuyên về hỗ trợ đặt món và tư vấn menu thôi ạ. Bạn có muốn mình hỗ trợ không ạ?".
 - KHÔNG BAO GIỜ được phép bỏ qua bất kỳ bước nào trong quy trình đặt món. Nếu khách chưa cung cấp đủ thông tin, bạn phải tiếp tục hỏi cho đến khi có đủ.
@@ -251,7 +251,10 @@ async def command_start_handler(message: types.Message):
     await message.answer("Dạ xin chào! Mình là Vịt. Rất vui được đón tiếp Bạn ạ. Hôm nay Bạn muốn dùng thức uống gì để mình chuẩn bị ạ? 🥰")
 
 # CỔNG PHẢN HỒI NHANH (BYPASS AI)
-@dp.message(lambda msg: msg.text and any(kw in msg.text.lower() for kw in ["menu", "thực đơn"]) and len(msg.text) <= 30)
+@dp.message(lambda msg: msg.text and re.sub(r'[.!?,;]$', '', msg.text.strip().lower()) in [
+    "menu", "thực đơn", "xem menu", "xin menu", "cho xin menu", "cho xem menu", 
+    "menu ạ", "thực đơn ạ"
+])
 async def instant_menu_handler(message: types.Message):
     bot_reply = f"Dạ vâng, xin gửi menu của quán để mình tham khảo ạ:\n\n{PRETTY_MENU}"
     
